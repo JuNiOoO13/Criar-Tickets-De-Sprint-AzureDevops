@@ -235,7 +235,7 @@ def getProjects():
     response = requests.get(url, auth=HTTPBasicAuth('', personal_access_token))
     if response.status_code == 200:
         iterations = response.json()
-        return iterations['value'];
+        return list(map(lambda x : x['name'],iterations['value']));
     else:
         print(f'Erro: {response.status_code} - {response.text}')
     pass
@@ -245,20 +245,39 @@ def getProjects():
 def getJsonData():
     global team, personal_access_token, organization, project
     if(not exists('configs.json')):
+        print('Primeira vez usando ferramenta necessario configurar: ')
         personal_access_token = input('Api-key => ');
         organization = input('organização =>  ');
-    with open('configs.json', 'r') as file:
-        pass
+        projectsList = getProjects();
+        menu = Menu('Escolha seu Projeto: ',projectsList)
+        choosedIndex = menu.startMenu();
+        project = projectsList[choosedIndex];
+        jsonData = {
+            "organization" : organization,
+            "api-key" : personal_access_token,
+            "project" : project
+        }
+
+        with open('configs.json', 'w') as configFile:
+            json.dump(jsonData, configFile,indent=4)
+
+    else:
+        with open('configs.json', 'r') as configFile:
+            jsonData = json.load(configFile);
+            personal_access_token = jsonData['api-key'];
+            organization = jsonData['organization'];
+            project = jsonData['project'];
 
 
-organization = 'agtechagro'
-project = 'Atividades WEB'
-team = 'Atividades WEB Team'
-personal_access_token = ''
-sprint_path = r'Atividades WEB\Comunicação PremoPlan - parte 1'
-produto = 'PremoPlan'
-projeto = 'PremoPlan 5.0'
-dataFim = '18/10/2024'
+
+organization = str
+project = str
+team = str
+personal_access_token = str
+sprint_path = str
+produto = str
+projeto = str
+dataFim = str
 
 url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/$Product%20Backlog%20Item?api-version=7.0'
 headers = {
@@ -268,19 +287,20 @@ headers = {
 auth = HTTPBasicAuth('', personal_access_token)
 
 
+getJsonData();
 
-spreadSheets = searchSpreadsheet();
+# spreadSheets = searchSpreadsheet();
 
-menu = Menu('Qual planinha:',spreadSheets)
-index = menu.startMenu();
-fullDir = join(getcwd(),'Planilhas',spreadSheets[index])
-listaDados = getSpreadsheetData(fullDir);
+# menu = Menu('Qual planinha:',spreadSheets)
+# index = menu.startMenu();
+# fullDir = join(getcwd(),'Planilhas',spreadSheets[index])
+# listaDados = getSpreadsheetData(fullDir);
 
-getUserData()
+# getUserData()
 
 
-for item in listaDados:
-    createTicket(item);
+# for item in listaDados:
+#     createTicket(item);
 
 
 
