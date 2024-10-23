@@ -83,9 +83,8 @@ class Menu:
         self.currentItens = list(filter(lambda item: self.searchString.lower() in item.lower(),self.itens))
         self._drawMenu()
 
-
 def getUserData():
-    global sprint_path, produto, projeto, team
+    global sprint_path, produto, projeto, team,codeReview
     sprintNames = []
     sprintPaths = []
 
@@ -103,8 +102,8 @@ def getUserData():
 
     produto = getInfo('Qual projeto: ',avaliableProducts['allowedValues'])
     projeto = getInfo('Qual Projeto: ',avaliableProjects['allowedValues'])
+    codeReview = getInfo('Deseja Escolher Criar os Tickets de Code Reviews Separados? ', ['Sim','Não'],[True,False])
     
-
 def getInfo(ask,data,dataToExtract=None):
     menu = Menu(ask,data)
     index = menu.startMenu()
@@ -143,6 +142,14 @@ def getSpreadsheetData(arqName):
                 obj['effort'] = row['QA']
                 obj['acceptanceCriteria'] = row['Critério de aceitação']
                 obj['taskType'] = 'QA'
+                objList.append(obj)
+            if(codeReview):
+                obj = {}
+                obj['name'] = "CodeReview - " + row['Título do ticket']
+                obj['description'] =  row['Histórias de teste']
+                obj['effort'] = row['QA']
+                obj['acceptanceCriteria'] = row['Critério de aceitação']
+                obj['taskType'] = 'Code Review'
                 objList.append(obj)
     
     return objList
@@ -211,7 +218,6 @@ def createTicket(values):
     else:
         print(f"Erro ao criar o ticket: {response.status_code}, {response.text}")
     
-
 def getFields(fieldName):
     url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitemtypes/Product Backlog Item/fields/{fieldName}?$expand=allowedvalues&api-version=7.2-preview.3'
 
@@ -246,7 +252,6 @@ def getProjects():
         return list(map(lambda x : x['name'],iterations['value']))
     else:
         print(f'Erro: {response.status_code} - {response.text}')
-
 
 def getTeams():
     url = f'https://dev.azure.com/{organization}/_apis/teams?api-version=7.2-preview.3'
@@ -314,6 +319,7 @@ auth = HTTPBasicAuth('', personal_access_token)
 
 
 getJsonData()
+getUserData()
 
 
 # spreadSheets = searchSpreadsheet()
@@ -324,12 +330,11 @@ getJsonData()
 # listaDados = getSpreadsheetData(fullDir)
 # ticketsIds = []
 
-getUserData()
 
 
 # for item in listaDados:
 #     ticketId, ticketType = createTicket(item)
-#     if(ticketType == 'QA'):
+#     if(ticketType == 'QA' or ticketType == 'Code Review' ):
 #             ticketsIds[len(ticketsIds) - 1] += f'/{ticketId}'
 #     else:
 #         ticketsIds.append(ticketId)
