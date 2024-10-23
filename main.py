@@ -1,5 +1,6 @@
 import pandas as pd
 import requests
+import openpyxl
 from requests.auth import HTTPBasicAuth
 import json
 import os
@@ -99,7 +100,8 @@ def getUserData():
 
     sprint_path = getInfo('Deseja Escolher Qual Sprint: ',sprintNames,sprintPaths)
     produto = getInfo('Qual projeto: ',avaliableProducts['allowedValues']);
-    projeto = getInfo('Qual Projeto: ',avaliableProjects['allowedValues'])
+    projeto = getInfo('Qual Projeto: ',avaliableProjects['allowedValues']);
+    
 
 def getInfo(ask,data,dataToExtract=None):
     menu = Menu(ask,data)
@@ -199,9 +201,15 @@ def createTicket(values):
 
     response = requests.post(url, headers=headers, auth=auth, data=json.dumps(ticket))
     if response.status_code == 200 or response.status_code == 201:
-        print("Ticket criado com sucesso!")
+        ticketData = response.json()
+        print(f"Ticket {ticketData['id']} criado com sucesso!")
+        return ticketData['id'], ticketData['taskType']
+        
+
     else:
         print(f"Erro ao criar o ticket: {response.status_code}, {response.text}")
+    
+    return 
 
 def getFields(fieldName):
     url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitemtypes/Product Backlog Item/fields/{fieldName}?$expand=allowedvalues&api-version=7.2-preview.3'
@@ -229,7 +237,6 @@ def getSprints():
     else:
         print(f'Erro: {response.status_code} - {response.text}')
 
-
 def getProjects():
     url = f'https://dev.azure.com/{organization}/_apis/projects?api-version=7.0';
     response = requests.get(url, auth=HTTPBasicAuth('', personal_access_token))
@@ -239,8 +246,6 @@ def getProjects():
     else:
         print(f'Erro: {response.status_code} - {response.text}')
     pass
-
-
 
 def getJsonData():
     global team, personal_access_token, organization, project
@@ -268,7 +273,19 @@ def getJsonData():
             organization = jsonData['organization'];
             project = jsonData['project'];
 
+def setTicketsIdOnSpreadsheet(directory,itemList):
+    wb = openpyxl.load_workbook(directory)
+    ws = wb.active
 
+    startLine = 20;
+    for index,item in enumerate(itemList):
+        print()
+        ws[f'B{startLine + index}'] = item
+
+    wb.save(directory)
+
+def createTicketTest(data):
+    return str(data['id']),data['taskType']
 
 organization = str
 project = str
@@ -289,18 +306,24 @@ auth = HTTPBasicAuth('', personal_access_token)
 
 getJsonData();
 
-# spreadSheets = searchSpreadsheet();
 
-# menu = Menu('Qual planinha:',spreadSheets)
-# index = menu.startMenu();
-# fullDir = join(getcwd(),'Planilhas',spreadSheets[index])
-# listaDados = getSpreadsheetData(fullDir);
+spreadSheets = searchSpreadsheet();
 
-# getUserData()
+menu = Menu('Qual planinha:',spreadSheets)
+index = menu.startMenu();
+fullDir = join(getcwd(),'Planilhas',spreadSheets[index])
+listaDados = getSpreadsheetData(fullDir);
+ticketsIds = [];
 
-
-# for item in listaDados:
-#     createTicket(item);
+getUserData()
 
 
+for item in listaDados:
+    ticketId, ticketType = createTicket(item);
+    if(ticketType == 'QA'):
+            ticketsIds[len(ticketsIds) - 1] += f'/{ticketId}';
+    else:
+        ticketsIds.append(ticketId)
+
+setTicketsIdOnSpreadsheet(fullDir, ticketsIds)
 
