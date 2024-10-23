@@ -85,7 +85,7 @@ class Menu:
 
 
 def getUserData():
-    global sprint_path,produto,projeto
+    global sprint_path,produto,projeto;
     sprintNames = []
     sprintPaths = [];
 
@@ -209,7 +209,6 @@ def createTicket(values):
     else:
         print(f"Erro ao criar o ticket: {response.status_code}, {response.text}")
     
-    return 
 
 def getFields(fieldName):
     url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitemtypes/Product Backlog Item/fields/{fieldName}?$expand=allowedvalues&api-version=7.2-preview.3'
@@ -279,22 +278,20 @@ def setTicketsIdOnSpreadsheet(directory,itemList):
 
     startLine = 20;
     for index,item in enumerate(itemList):
-        print()
-        ws[f'B{startLine + index}'] = item
+        ws[f'B{startLine + index}'] = item;
 
-    wb.save(directory)
+    wb.save(directory);
 
-def createTicketTest(data):
-    return str(data['id']),data['taskType']
 
-organization = str
-project = str
-team = str
-personal_access_token = str
-sprint_path = str
-produto = str
-projeto = str
-dataFim = str
+organization = str;
+project = str;
+team = str;
+personal_access_token = str;
+sprint_path = str;
+produto = str;
+projeto = str;
+dataFim = str;
+codeReview = bool;
 
 url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/$Product%20Backlog%20Item?api-version=7.0'
 headers = {
@@ -318,12 +315,12 @@ ticketsIds = [];
 getUserData()
 
 
-for item in listaDados:
-    ticketId, ticketType = createTicket(item);
-    if(ticketType == 'QA'):
-            ticketsIds[len(ticketsIds) - 1] += f'/{ticketId}';
-    else:
-        ticketsIds.append(ticketId)
+# for item in listaDados:
+#     ticketId, ticketType = createTicket(item);
+#     if(ticketType == 'QA'):
+#             ticketsIds[len(ticketsIds) - 1] += f'/{ticketId}';
+#     else:
+#         ticketsIds.append(ticketId)
 
-setTicketsIdOnSpreadsheet(fullDir, ticketsIds)
+# setTicketsIdOnSpreadsheet(fullDir, ticketsIds)
 
