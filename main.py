@@ -13,83 +13,83 @@ from sys import exit
 
 
 class Menu:
-    ask = str;
-    itens = list;
-    currentItem = int;
-    maxListLen = int;
-    allInputs = list;
-    currentItens = list;
-    allAllowedChars = '1234567890qwertyuiopasdfghjklçzxcvbnm';
-    searchString = str;
+    ask = str
+    itens = list
+    currentItem = int
+    maxListLen = int
+    allInputs = list
+    currentItens = list
+    allAllowedChars = '1234567890qwertyuiopasdfghjklçzxcvbnm'
+    searchString = str
     
     def __init__(self,ask,itens):
     
-        self.ask = ask;
-        self.itens = itens;
-        self.currentItens = itens;
-        self.maxListLen = len(itens);
-        self.currentItem = 0;
-        self.searchString = '';
+        self.ask = ask
+        self.itens = itens
+        self.currentItens = itens
+        self.maxListLen = len(itens)
+        self.currentItem = 0
+        self.searchString = ''
         self.allInputs = {
             "up" : partial(self._movTo,-1),
             "down" : partial(self._movTo,1),
             "backspace" : partial(self.backSpaceFunction),
             "space" : partial(self.spaceFunction)
         }
-        self._drawMenu();
+        self._drawMenu()
 
     def startMenu(self):
         keyboard.on_press(self._on_key_event)
-        keyboard.wait('enter');
+        keyboard.wait('enter')
         self.listIndex = self.itens.index(self.currentItens[self.currentItem])
-        return self.listIndex;
+        return self.listIndex
 
     def _movTo(self,direction):
         if(not self.currentItem + direction > self.maxListLen - 1 and not self.currentItem + direction < 0):
-            self.currentItem += direction;
+            self.currentItem += direction
     
     def spaceFunction(self):
-        self.searchString += " ";
-        self.searchElement();
+        self.searchString += " "
+        self.searchElement()
         
     def backSpaceFunction(self):
         if not len(self.searchString) - 1 < 0:
             self.searchString = self.searchString[:len(self.searchString)-1]
-        self.searchElement();
-        self.currentItem = 0;
+        self.searchElement()
+        self.currentItem = 0
 
     def _drawMenu(self):
-        system('cls');
+        system('cls')
         print(self.ask)
         for i,item in enumerate(self.currentItens):
             if(i == self.currentItem):
-                print(" => " + str(item));
+                print(" => " + str(item))
             else:
-                print(" " + item);
+                print(" " + item)
         print('Pesquise Aqui: ' + self.searchString)
 
     def _on_key_event(self,event):
         if(event.name in self.allInputs.keys()):
-            self.allInputs[event.name]();
-            self._drawMenu();
+            self.allInputs[event.name]()
+            self._drawMenu()
         
         else:
             if(event.name in self.allAllowedChars):
-                self.currentItem = 0;
-                self.searchString += event.name;
-                self.searchElement();
+                self.currentItem = 0
+                self.searchString += event.name
+                self.searchElement()
 
     def searchElement(self):
         self.currentItens = list(filter(lambda item: self.searchString.lower() in item.lower(),self.itens))
-        self._drawMenu();
+        self._drawMenu()
 
 
 def getUserData():
-    global sprint_path,produto,projeto;
+    global sprint_path,produto,projeto
     sprintNames = []
-    sprintPaths = [];
+    sprintPaths = []
 
-    avaliableSprints = getSprints();
+    avaliableSprints = getSprints()
     for item in avaliableSprints:
         sprintNames.append(item['name'])
         sprintPaths.append(item['path'])
@@ -99,30 +99,30 @@ def getUserData():
     avaliableProducts = getFields('Produto')
 
     sprint_path = getInfo('Deseja Escolher Qual Sprint: ',sprintNames,sprintPaths)
-    produto = getInfo('Qual projeto: ',avaliableProducts['allowedValues']);
-    projeto = getInfo('Qual Projeto: ',avaliableProjects['allowedValues']);
+    produto = getInfo('Qual projeto: ',avaliableProducts['allowedValues'])
+    projeto = getInfo('Qual Projeto: ',avaliableProjects['allowedValues'])
     
 
 def getInfo(ask,data,dataToExtract=None):
     menu = Menu(ask,data)
-    index = menu.startMenu();
-    return data[index] if dataToExtract == None else dataToExtract[index];
+    index = menu.startMenu()
+    return data[index] if dataToExtract == None else dataToExtract[index]
 
 def searchSpreadsheet():
-    currentDir = getcwd();
+    currentDir = getcwd()
     spreadSheetPath = join(currentDir, 'Planilhas')
     if(not exists(spreadSheetPath)):
-        mkdir(spreadSheetPath);
+        mkdir(spreadSheetPath)
     
-    spreadSheets = listdir(spreadSheetPath);
+    spreadSheets = listdir(spreadSheetPath)
     if(len(spreadSheets) == 0):
         print('Você não tem nenhuma planilha na pasta tente add e rodar novamente o Programa')
         exit()
     else:
-        return spreadSheets;
+        return spreadSheets
 
 def getSpreadsheetData(arqName):
-    df = pd.read_excel(arqName, header=18, engine='openpyxl');
+    df = pd.read_excel(arqName, header=18, engine='openpyxl')
     objList = []
     for index, row in df.iterrows():
         if(not pd.isna(row['Título do ticket'])):
@@ -132,7 +132,7 @@ def getSpreadsheetData(arqName):
             obj['effort'] = row['Horas']
             obj['acceptanceCriteria'] = row['Critério de aceitação']
             obj['taskType'] = 'Documentação' if pd.isna(row['Histórias de teste']) else 'Desenvolvimento'
-            objList.append(obj);
+            objList.append(obj)
             if(not pd.isna(row['QA'])):
 
                 obj = {}
@@ -141,7 +141,7 @@ def getSpreadsheetData(arqName):
                 obj['effort'] = row['QA']
                 obj['acceptanceCriteria'] = row['Critério de aceitação']
                 obj['taskType'] = 'QA'
-                objList.append(obj);
+                objList.append(obj)
     
     return objList
 
@@ -217,13 +217,13 @@ def getFields(fieldName):
     if response.status_code == 200:
         field_data = response.json()
         if 'allowedValues' in field_data:
-            return field_data;
+            return field_data
         else:
             print('Esse campo não possui valores disponíveis.')
-            exit();
+            exit()
     else:
         print(f'Erro: {response.status_code} - {response.text}')
-        exit();
+        exit()
 
 def getSprints():
     url = f'https://dev.azure.com/{organization}/{project}/{team}/_apis/work/teamsettings/iterations?api-version=7.0'
@@ -232,16 +232,16 @@ def getSprints():
 
     if response.status_code == 200:
         iterations = response.json()
-        return iterations['value'];
+        return iterations['value']
     else:
         print(f'Erro: {response.status_code} - {response.text}')
 
 def getProjects():
-    url = f'https://dev.azure.com/{organization}/_apis/projects?api-version=7.0';
+    url = f'https://dev.azure.com/{organization}/_apis/projects?api-version=7.0'
     response = requests.get(url, auth=HTTPBasicAuth('', personal_access_token))
     if response.status_code == 200:
         iterations = response.json()
-        return list(map(lambda x : x['name'],iterations['value']));
+        return list(map(lambda x : x['name'],iterations['value']))
     else:
         print(f'Erro: {response.status_code} - {response.text}')
     pass
@@ -250,12 +250,12 @@ def getJsonData():
     global team, personal_access_token, organization, project
     if(not exists('configs.json')):
         print('Primeira vez usando ferramenta necessario configurar: ')
-        personal_access_token = input('Api-key => ');
-        organization = input('organização =>  ');
-        projectsList = getProjects();
+        personal_access_token = input('Api-key => ')
+        organization = input('organização =>  ')
+        projectsList = getProjects()
         menu = Menu('Escolha seu Projeto: ',projectsList)
-        choosedIndex = menu.startMenu();
-        project = projectsList[choosedIndex];
+        choosedIndex = menu.startMenu()
+        project = projectsList[choosedIndex]
         jsonData = {
             "organization" : organization,
             "api-key" : personal_access_token,
@@ -267,31 +267,31 @@ def getJsonData():
 
     else:
         with open('configs.json', 'r') as configFile:
-            jsonData = json.load(configFile);
-            personal_access_token = jsonData['api-key'];
-            organization = jsonData['organization'];
-            project = jsonData['project'];
+            jsonData = json.load(configFile)
+            personal_access_token = jsonData['api-key']
+            organization = jsonData['organization']
+            project = jsonData['project']
 
 def setTicketsIdOnSpreadsheet(directory,itemList):
     wb = openpyxl.load_workbook(directory)
     ws = wb.active
 
-    startLine = 20;
+    startLine = 20
     for index,item in enumerate(itemList):
-        ws[f'B{startLine + index}'] = item;
+        ws[f'B{startLine + index}'] = item
 
-    wb.save(directory);
+    wb.save(directory)
 
 
-organization = str;
-project = str;
-team = str;
-personal_access_token = str;
-sprint_path = str;
-produto = str;
-projeto = str;
-dataFim = str;
-codeReview = bool;
+organization = str
+project = str
+team = str
+personal_access_token = str
+sprint_path = str
+produto = str
+projeto = str
+dataFim = str
+codeReview = bool
 
 url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/$Product%20Backlog%20Item?api-version=7.0'
 headers = {
@@ -301,24 +301,24 @@ headers = {
 auth = HTTPBasicAuth('', personal_access_token)
 
 
-getJsonData();
+getJsonData()
 
 
-spreadSheets = searchSpreadsheet();
+spreadSheets = searchSpreadsheet()
 
 menu = Menu('Qual planinha:',spreadSheets)
-index = menu.startMenu();
+index = menu.startMenu()
 fullDir = join(getcwd(),'Planilhas',spreadSheets[index])
-listaDados = getSpreadsheetData(fullDir);
-ticketsIds = [];
+listaDados = getSpreadsheetData(fullDir)
+ticketsIds = []
 
 getUserData()
 
 
 # for item in listaDados:
-#     ticketId, ticketType = createTicket(item);
+#     ticketId, ticketType = createTicket(item)
 #     if(ticketType == 'QA'):
-#             ticketsIds[len(ticketsIds) - 1] += f'/{ticketId}';
+#             ticketsIds[len(ticketsIds) - 1] += f'/{ticketId}'
 #     else:
 #         ticketsIds.append(ticketId)
 
