@@ -85,10 +85,12 @@ class Menu:
 
 
 def getUserData():
-    global sprint_path,produto,projeto
+    global sprint_path, produto, projeto, team
     sprintNames = []
     sprintPaths = []
 
+    avaliableTeams = getTeams()
+    team = getInfo('Deseja Escolher qual Time: ',avaliableTeams);
     avaliableSprints = getSprints()
     for item in avaliableSprints:
         sprintNames.append(item['name'])
@@ -97,8 +99,8 @@ def getUserData():
 
     avaliableProjects = getFields('Projeto')
     avaliableProducts = getFields('Produto')
-
     sprint_path = getInfo('Deseja Escolher Qual Sprint: ',sprintNames,sprintPaths)
+
     produto = getInfo('Qual projeto: ',avaliableProducts['allowedValues'])
     projeto = getInfo('Qual Projeto: ',avaliableProjects['allowedValues'])
     
@@ -244,7 +246,17 @@ def getProjects():
         return list(map(lambda x : x['name'],iterations['value']))
     else:
         print(f'Erro: {response.status_code} - {response.text}')
-    pass
+
+
+def getTeams():
+    url = f'https://dev.azure.com/{organization}/_apis/teams?api-version=7.2-preview.3'
+    print(url)
+    response = requests.get(url, auth=HTTPBasicAuth('', personal_access_token))
+    if response.status_code == 200:
+        iterations = response.json()
+        return list(map(lambda x : x['name'],iterations['value']))
+    else:
+        print(f'Erro: {response.status_code} - {response.text}')
 
 def getJsonData():
     global team, personal_access_token, organization, project
@@ -304,13 +316,13 @@ auth = HTTPBasicAuth('', personal_access_token)
 getJsonData()
 
 
-spreadSheets = searchSpreadsheet()
+# spreadSheets = searchSpreadsheet()
 
-menu = Menu('Qual planinha:',spreadSheets)
-index = menu.startMenu()
-fullDir = join(getcwd(),'Planilhas',spreadSheets[index])
-listaDados = getSpreadsheetData(fullDir)
-ticketsIds = []
+# menu = Menu('Qual planinha:',spreadSheets)
+# index = menu.startMenu()
+# fullDir = join(getcwd(),'Planilhas',spreadSheets[index])
+# listaDados = getSpreadsheetData(fullDir)
+# ticketsIds = []
 
 getUserData()
 
