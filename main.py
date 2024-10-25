@@ -96,12 +96,15 @@ def getUserData():
         sprintPaths.append(item['path'])
 
 
-    avaliableProjects = getFields('Projeto')
-    avaliableProducts = getFields('Produto')
-    sprint_path = getInfo('Deseja Escolher Qual Sprint: ',sprintNames,sprintPaths)
+    avaliableProjects = getFields('Projeto')['allowedValues']
+    avaliableProducts = getFields('Produto')['allowedValues']
 
-    produto = getInfo('Qual projeto: ',avaliableProducts['allowedValues'])
-    projeto = getInfo('Qual Projeto: ',avaliableProjects['allowedValues'])
+
+    
+    sprint_path = getInfo('Deseja Escolher Qual Sprint: ',sprintNames,sprintPaths)
+    print(avaliableProducts)
+    produto = getInfo('Qual produto: ',avaliableProducts + ['Nenhum'],avaliableProducts + [' '])
+    projeto = getInfo('Qual Projeto: ',avaliableProjects + ['Nenhum'], avaliableProjects + [' '])
     codeReview = getInfo('Deseja Escolher Criar os Tickets de Code Reviews Separados? ', ['Sim','Não'],[True,False])
     
 def getInfo(ask,data,dataToExtract=None):
@@ -169,7 +172,7 @@ def createTicket(values):
         {
             "op" : "add",
             "path" : "/fields/System.Description",
-            "value" : values['description'],
+            "value" : values['description']
         },
         {
             "op" : "add",
@@ -207,8 +210,9 @@ def createTicket(values):
             "value": sprint_path
         }
      ]
-
+    print(sprint_path)
     response = requests.post(url, headers=headers, auth=auth, data=json.dumps(ticket))
+    exit()
     if response.status_code == 200 or response.status_code == 201:
         ticketData = response.json()
         print(f"Ticket {ticketData['id']} criado com sucesso!")
@@ -217,6 +221,7 @@ def createTicket(values):
 
     else:
         print(f"Erro ao criar o ticket: {response.status_code}, {response.text}")
+        return -1, 'erro'
     
 def getFields(fieldName):
     url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitemtypes/Product Backlog Item/fields/{fieldName}?$expand=allowedvalues&api-version=7.2-preview.3'
@@ -248,6 +253,9 @@ def getProjects():
     url = f'https://dev.azure.com/{organization}/_apis/projects?api-version=7.0'
     response = requests.get(url, auth=HTTPBasicAuth('', personal_access_token))
     if response.status_code == 200:
+
+
+
         iterations = response.json()
         return list(map(lambda x : x['name'],iterations['value']))
     else:
@@ -300,44 +308,45 @@ def setTicketsIdOnSpreadsheet(directory,itemList):
     wb.save(directory)
 
 
-organization = str
-project = str
-team = str
-personal_access_token = str
-sprint_path = str
-produto = str
-projeto = str
-dataFim = str
-codeReview = bool
 
-url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/$Product%20Backlog%20Item?api-version=7.0'
-headers = {
-    'Content-Type': 'application/json-patch+json',
-    'Accept': 'application/json'
-}
-auth = HTTPBasicAuth('', personal_access_token)
+if(__name__ == '__main__'):
+    organization = str
+    project = str
+    team = str
+    personal_access_token = str
+    sprint_path = str
+    produto = str
+    projeto = str
+    dataFim = str
+    codeReview = bool
 
-
-getJsonData()
-getUserData()
+    url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/$Product%20Backlog%20Item?api-version=7.0'
+    headers = {
+        'Content-Type': 'application/json-patch+json',
+        'Accept': 'application/json'
+    }
+    auth = HTTPBasicAuth('', personal_access_token)
 
 
-# spreadSheets = searchSpreadsheet()
-
-# menu = Menu('Qual planinha:',spreadSheets)
-# index = menu.startMenu()
-# fullDir = join(getcwd(),'Planilhas',spreadSheets[index])
-# listaDados = getSpreadsheetData(fullDir)
-# ticketsIds = []
+    getJsonData()
+    getUserData()
 
 
+    spreadSheets = searchSpreadsheet()
 
-# for item in listaDados:
-#     ticketId, ticketType = createTicket(item)
-#     if(ticketType == 'QA' or ticketType == 'Code Review' ):
-#             ticketsIds[len(ticketsIds) - 1] += f'/{ticketId}'
-#     else:
-#         ticketsIds.append(ticketId)
+    menu = Menu('Qual planinha:',spreadSheets)
+    index = menu.startMenu()
+    fullDir = join(getcwd(),'Planilhas',spreadSheets[index])
+    listaDados = getSpreadsheetData(fullDir)
+    ticketsIds = []
 
-# setTicketsIdOnSpreadsheet(fullDir, ticketsIds)
 
+    for item in listaDados:
+        ticketId, ticketType = createTicket(item)
+        if(not ticketId == -1):
+            if(ticketType == 'QA' or ticketType == 'Code Review' ):
+                    ticketsIds[len(ticketsIds) - 1] += f'/{ticketId}'
+            else:
+                ticketsIds.append(ticketId)
+
+    setTicketsIdOnSpreadsheet(fullDir, ticketsIds)
