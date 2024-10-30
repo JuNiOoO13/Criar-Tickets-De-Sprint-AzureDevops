@@ -131,29 +131,29 @@ def getSpreadsheetData(arqName):
     for index, row in df.iterrows():
         if(not pd.isna(row['Título do ticket'])):
             obj = {}
-            obj['name'] = row['Título do ticket']
-            obj['description'] = row['Descrição']
-            obj['effort'] = row['Horas']
-            obj['acceptanceCriteria'] = row['Critério de aceitação']
-            obj['taskType'] = 'Documentação' if pd.isna(row['Histórias de teste']) else 'Desenvolvimento'
+            obj['name'] = row['Título do ticket'] if not pd.isna(row['Título do ticket']) else 'Sem Titulo'
+            obj['description'] = row['Descrição'] if not pd.isna(row['Descrição']) else 'sem Descrição'
+            obj['effort'] = row['Horas'] if not pd.isna(row['Horas']) else '1'
+            obj['acceptanceCriteria'] = row['Critério de aceitação'] if not pd.isna(row['Critério de aceitação']) else 'Sem criterio de aceitação'
+            obj['taskType'] = 'Documentação' if not pd.isna(row['Histórias de teste']) else 'Desenvolvimento'
             objList.append(obj)
             if(not pd.isna(row['QA'])):
 
                 obj = {}
-                obj['name'] = "QA - " + row['Título do ticket']
-                obj['description'] =  row['Histórias de teste']
-                obj['effort'] = row['QA']
-                obj['acceptanceCriteria'] = row['Critério de aceitação']
+                obj['name'] = "QA - " +  row['Título do ticket'] if not pd.isna(row['Título do ticket'])  else 'Sem titulo'
+                obj['description'] =  row['Histórias de teste'] if not pd.isna(row['Histórias de teste']) else 'sem Historia de teste'
+                obj['effort'] = row['QA'] if not pd.isna(row['QA']) else '1'
+                obj['acceptanceCriteria'] =  row['Critério de aceitação'] if not pd.isna(row['Critério de aceitação']) else 'Sem criterio de aceitação'
                 obj['taskType'] = 'QA'
                 objList.append(obj)
-            if(codeReview):
-                obj = {}
-                obj['name'] = "CodeReview - " + row['Título do ticket']
-                obj['description'] =  row['Histórias de teste']
-                obj['effort'] = row['QA']
-                obj['acceptanceCriteria'] = row['Critério de aceitação']
-                obj['taskType'] = 'Code Review'
-                objList.append(obj)
+                if(codeReview):
+                    obj = {}
+                    obj['name'] = "CodeReview - " + row['Título do ticket'] if not pd.isna(row['Título do ticket']) else 'Sem Titulo'
+                    obj['description'] =  row['Histórias de teste'] if not pd.isna(row['Histórias de teste']) else 'Sem Descrição'
+                    obj['effort'] = row['QA'] if not pd.isna(row['QA']) else '1'
+                    obj['acceptanceCriteria'] = row['Critério de aceitação'] if not pd.isna(row['Critério de aceitação']) else 'Sem criterio de aceitação'
+                    obj['taskType'] = 'Code Review'
+                    objList.append(obj)
     
     return objList
 
@@ -208,21 +208,38 @@ def createTicket(values):
             "op": "add",
             "path": "/fields/System.IterationPath",
             "value": sprint_path
+        },
+        {
+            "op": "add",
+            "path": "/fields/System.AreaPath",
+            "value": getArea(sprint_path)
+        },
+        {
+            'op':"add",
+            'path':"/fields/Acceptance Criteria",
+            'value':values['acceptanceCriteria']
         }
+       
      ]
-    print(sprint_path)
+    url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/$Product%20Backlog%20Item?api-version=7.0'
     response = requests.post(url, headers=headers, auth=auth, data=json.dumps(ticket))
-    exit()
     if response.status_code == 200 or response.status_code == 201:
         ticketData = response.json()
         print(f"Ticket {ticketData['id']} criado com sucesso!")
-        return ticketData['id'], ticketData['taskType']
+        return ticketData['id'], values['taskType']
         
 
     else:
         print(f"Erro ao criar o ticket: {response.status_code}, {response.text}")
         return -1, 'erro'
-    
+
+def getArea(sprintPath):
+    sprintPathArray = sprintPath.split('\\')
+    sprintPathArray.pop()
+    areaPath = '\\'.join(sprintPathArray)
+    return areaPath
+
+
 def getFields(fieldName):
     url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitemtypes/Product Backlog Item/fields/{fieldName}?$expand=allowedvalues&api-version=7.2-preview.3'
 
@@ -253,9 +270,6 @@ def getProjects():
     url = f'https://dev.azure.com/{organization}/_apis/projects?api-version=7.0'
     response = requests.get(url, auth=HTTPBasicAuth('', personal_access_token))
     if response.status_code == 200:
-
-
-
         iterations = response.json()
         return list(map(lambda x : x['name'],iterations['value']))
     else:
@@ -320,16 +334,17 @@ if(__name__ == '__main__'):
     dataFim = str
     codeReview = bool
 
-    url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/$Product%20Backlog%20Item?api-version=7.0'
+    
     headers = {
         'Content-Type': 'application/json-patch+json',
         'Accept': 'application/json'
     }
-    auth = HTTPBasicAuth('', personal_access_token)
 
 
     getJsonData()
+    auth = HTTPBasicAuth('', personal_access_token)
     getUserData()
+    
 
 
     spreadSheets = searchSpreadsheet()
@@ -345,7 +360,7 @@ if(__name__ == '__main__'):
         ticketId, ticketType = createTicket(item)
         if(not ticketId == -1):
             if(ticketType == 'QA' or ticketType == 'Code Review' ):
-                    ticketsIds[len(ticketsIds) - 1] += f'/{ticketId}'
+                    ticketsIds[len(ticketsIds) - 1] = str(ticketsIds[len(ticketsIds) - 1]) + f'/{ticketId}'
             else:
                 ticketsIds.append(ticketId)
 
